@@ -2,14 +2,14 @@ alphabet==0.0.6
 appnope==0.1.0
 backcall==0.1.0
 base58==1.0.3
-bleach==3.1.0
+bleach==3.1.4
 certifi==2018.11.29
 chardet==3.0.4
 Click==7.0
 cycler==0.10.0
 decorator==4.3.0
 defusedxml==0.5.0
-ecdsa==0.13
+ecdsa==0.13.3
 entrypoints==0.3
 filemagic==1.6
 Flask==1.0.2
@@ -38,7 +38,7 @@ mistune==0.8.4
 Naked==0.1.31
 nbconvert==5.4.0
 nbformat==4.4.0
-notebook==5.7.4
+notebook==5.7.8
 numpy==1.16.0
 pandocfilters==1.4.2
 parso==0.3.1
@@ -52,7 +52,7 @@ Pygments==2.3.1
 pyparsing==2.3.1
 pysha3==1.0.2
 python-dateutil==2.7.5
-PyYAML==3.13
+PyYAML==5.1
 pyzmq==17.1.2
 qtconsole==4.4.3
 requests==2.21.0
@@ -63,9 +63,9 @@ terminado==0.8.1
 testpath==0.4.2
 tornado==5.1.1
 traitlets==4.3.2
-urllib3==1.24.1
+urllib3==1.24.2
 utils==0.9.0
 wcwidth==0.1.7
 webencodings==0.5.1
-Werkzeug==0.14.1
+Werkzeug==0.15.3
 widgetsnbextension==3.4.2
