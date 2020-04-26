@@ -3,7 +3,7 @@ import json
 from flask import Flask
 from flask import request
 from multiprocessing import Process, Pipe
-import blockchain
+from blockchain import Blockchain
 from block import Block
 import tx_validator
 import requests
@@ -16,135 +16,77 @@ import serializer
 #import miner_cli
 from flask_cors import CORS
 from serializer import *
+from file_system_wraper import FileSystem
 
 from config import URL, NODE_PORT
 
 node = Flask(__name__)
 CORS(node)
 
-BLOCKCHAIN = []
-NODES = []
+blockchain = Blockchain(URL, NODE_PORT)
 
-"""служебные функции"""
-
-
-def to_dictionary(blckchain):
-	dct = []
-	d = blckchain.copy()
-	for blck in d:
-		dct.append(blck.to_dictionary())
-	return dct
-
-def dictionary_to_list(dct):
-	lst = []
-	for blck in dct:
-		lst.append(Block.from_dict(blck))
-	return lst
-
-def load_chain(blckchn):
-    try:
-        i = 0
-        b = None
-        while True:
-            with open('blocks/' + '%04d' % i + '.block') as json_file:
-                data = json.load(json_file)
-            blckchn.append(Block.from_dict(data))
-            json_file.close()
-            i = i + 1
-    except:
-        pass
-    return blckchn
-
-
-
-"""api функции"""
-
+@node.route('/miner/queue/number', methods=['GET'])
+def get_miner_queue_number():
+	global blockchain
+	return json.dumps(blockchain.miner_queue_number)
 
 @node.route('/newblock', methods=['POST'])
 def new_block():
-    global BLOCKCHAIN
-    if request.method == 'POST':
-        b = request.get_json()
-        #d = json.loads(b.decode('utf-8'))
-        blck = Block.from_dict(b)
-        if block_validator.validate(blck):
-            BLOCKCHAIN.append(blck)
-        "[TODO] Remove transactions from mempool"
+	global blockchain
+	block = Block.from_dict(request.get_json())
+	if block_validator.validate(block) is False:
+		return -1
+	blockchain.new_block(block)
+	"[TODO] Remove transactions from mempool"
+	return 0
 
-        with open('blocks/' + '%04d' % int(BLOCKCHAIN.index(blck)) + '.block', 'w') as outfile:
-                json.dump(b, outfile)
-        return 'Added'
-
-@node.route('/addnode',methods=['POST'])
+@node.route('/addnode', methods=['POST'])
 def add_node():
-    if request.method == 'POST':
-        port = request.get_json()['port']
-        f = open('nodes.config', 'a+')
-        f.write(port + '\n')
-        f.close()
-    return 'True'
+	port = request.get_json()['port']
+	blockchain.add_node(port)
+	return 0
 
 @node.route('/transactions/new', methods=['POST'])
 def submit_tx():
-    "[TODO] send to all nodes"
-    if request.method == 'POST':
-        pending_pool.pending_pool(request.get_json()['serialized'])
-    return 'okay'
+	"[TODO] send to all nodes"
+	pending_pool.pending_pool(request.get_json()['serialized'])
+	return 0
 
 @node.route('/transactions/pendings')
-def pending_thxs():
-
-    return json.dumps(t)
+def get_pending_thxs():
+	return json.dumps(pending_pool.take_transactions(0))
 
 
 @node.route('/chain')
-def chain():
-    global BLOCKCHAIN
-    BLOCKCHAIN = []
-    BLOCKCHAIN = load_chain(BLOCKCHAIN)
-    return json.dumps(to_dictionary(BLOCKCHAIN))
+def get_chain():
+	global blockchain
+	return json.dumps(blockchain.to_dictionary())
 
 @node.route('/chain/length')
-def chain_length():
-    global BLOCKCHAIN
-    BLOCKCHAIN = []
-    load_chain(BLOCKCHAIN)
-    length = {'length' : len(BLOCKCHAIN)}
-    length = json.dumps(length)
-    return (length)
+def get_chain_length():
+	global blockchain
+	return json.dumps(len(blockchain.chain))
 
 @node.route('/nodes')
-def nodes():
-    f = open('nodes.config', 'r')
-    nodes = f.readlines()
-    f.close()
-    for i in range(len(nodes)):
-        nodes[i] = nodes[i][:-1]
-    return json.dumps(nodes)
+def get_nodes():
+	global blockchain
+	return json.dumps(blockchain.get_friendly_nodes())
 
 
 @node.route('/block/', methods=['GET'])
 def get_n_block():
-    global BLOCKCHAIN
-    BLOCKCHAIN = []
-    BLOCKCHAIN = load_chain(BLOCKCHAIN)
-    height = int(request.args.get('height'))
+	global blockchain
+	height = int(request.args.get('height'))
 
-    print(height)
-    print(len(BLOCKCHAIN))
-    if height >= len(BLOCKCHAIN):
-        d = {}
-        return json.dumps(d)
-    else:
-        json_block = json.dumps(BLOCKCHAIN[height].to_dictionary())
-        return json_block
+	if height >= len(blockchain.chain):
+		return -1
+
+	return json.dumps(blockchain.chain[height].to_dictionary())
 
 @node.route('/block/last')
 def get_last_block():
-    global BLOCKCHAIN
-    BLOCKCHAIN = []
-    BLOCKCHAIN = load_chain(BLOCKCHAIN)
-    return json.dumps(BLOCKCHAIN[-1].to_dictionary())
+	global blockchain
+	return json.dumps(blockchain.chain[-1].to_dictionary())
 
 
 @node.route('/front/transtaction/new', methods=['POST', 'OPTIONS'])
@@ -173,9 +115,11 @@ def get_info_by_cargo_id():
 
 @node.route('/')
 def get_hello():
-    return json.dumps("HELLO DCCD")
+	return json.dumps("HELLO DCCD")
 
 
 if __name__ == '__main__':
-    p2 = Process(target = node.run(port = NODE_PORT))
-    p2.start()
+	p2 = Process(target = node.run(port = NODE_PORT))
+	p2.start()
+
+

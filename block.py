@@ -16,7 +16,7 @@ class Block():
 
 	@classmethod
 	def from_dict(cls, data):
-		b = cls(data['timestamp'], data['previous_hash'], data['transaction'])
+		b = cls(data['timestamp'], data['previous_hash'], data['transactions'])
 		b.hash = data['hash']
 		b.merkle_root = data['merkle_root']
 		return b
