@@ -4,7 +4,7 @@ from flask import Flask
 from flask import request
 from multiprocessing import Process, Pipe
 import blockchain
-import block
+from block import Block
 import tx_validator
 import requests
 import pending_pool
@@ -15,6 +15,7 @@ import transaction
 import serializer
 #import miner_cli
 from flask_cors import CORS
+from serializer import *
 
 from config import URL, NODE_PORT
 
@@ -26,39 +27,19 @@ NODES = []
 
 """служебные функции"""
 
-def to_object(data):
-    b = block.Block(data['timestamp'], data['previous_hash'],
-                          data['transactions'])
-    b.hash = data['hash']
-    b.nonce = data['nonce']
-    b.merkle_root = data['merkle_root']
-    return b
 
 def to_dictionary(blckchain):
-    dct = []
-    d = blckchain.copy()
-    for blck in d:
-        dct.append({
-            'timestamp' : blck.timestamp,
-            'nonce' : blck.nonce,
-            'previous_hash' : blck.previous_hash,
-            'transactions' : blck.transactions,
-            'merkle_root' : blck.merkle_root,
-            'hash' : blck.hash,
-        })
-
-    return dct
+	dct = []
+	d = blckchain.copy()
+	for blck in d:
+		dct.append(blck.to_dictionary())
+	return dct
 
 def dictionary_to_list(dct):
-    lst = []
-    b = None
-    for blck in dct:
-        b = block.Block(blck['timestamp'], blck['previous_hash'], blck['transactions'])
-        b.nonce = blck['nonce']
-        b.merkle_root = blck['merkle_root']
-        b.hash = blck['hash']
-        lst.append(b)
-    return lst
+	lst = []
+	for blck in dct:
+		lst.append(Block.from_dict(blck))
+	return lst
 
 def load_chain(blckchn):
     try:
@@ -67,34 +48,17 @@ def load_chain(blckchn):
         while True:
             with open('blocks/' + '%04d' % i + '.block') as json_file:
                 data = json.load(json_file)
-            b = to_object(data)
-            blckchn.append(b)
+            blckchn.append(Block.from_dict(data))
             json_file.close()
             i = i + 1
     except:
         pass
     return blckchn
 
-def obj_to_dictionary(blck):
-
-    d = {
-        'timestamp' : blck.timestamp,
-        'nonce' : blck.nonce,
-        'previous_hash' : blck.previous_hash,
-        'transactions' : blck.transactions,
-        'merkle_root' : blck.merkle_root,
-        'hash' : blck.hash,
-    }
-    return d
 
 
 """api функции"""
 
-
-@node.route('/utxo')
-def utxo():
-    "[TODO] Return utxo list"
-    return
 
 @node.route('/newblock', methods=['POST'])
 def new_block():
@@ -102,11 +66,10 @@ def new_block():
     if request.method == 'POST':
         b = request.get_json()
         #d = json.loads(b.decode('utf-8'))
-        blck = to_object(b)
+        blck = Block.from_dict(b)
         if block_validator.validate(blck):
             BLOCKCHAIN.append(blck)
         "[TODO] Remove transactions from mempool"
-        "[TODO] Remove spended utxo and added new"
 
         with open('blocks/' + '%04d' % int(BLOCKCHAIN.index(blck)) + '.block', 'w') as outfile:
                 json.dump(b, outfile)
@@ -130,12 +93,7 @@ def submit_tx():
 
 @node.route('/transactions/pendings')
 def pending_thxs():
-    f = open('mempool', 'r')
-    txs = f.readlines()
-    t = []
-    for i in txs:
-        t.append(i[:-1])
-    f.close()
+
     return json.dumps(t)
 
 
@@ -178,7 +136,7 @@ def get_n_block():
         d = {}
         return json.dumps(d)
     else:
-        json_block = json.dumps(obj_to_dictionary(BLOCKCHAIN[height]))
+        json_block = json.dumps(BLOCKCHAIN[height].to_dictionary())
         return json_block
 
 @node.route('/block/last')
@@ -186,49 +144,32 @@ def get_last_block():
     global BLOCKCHAIN
     BLOCKCHAIN = []
     BLOCKCHAIN = load_chain(BLOCKCHAIN)
-    return json.dumps(obj_to_dictionary(BLOCKCHAIN[-1]))
+    return json.dumps(BLOCKCHAIN[-1].to_dictionary())
 
-@node.route('/balance')
-def get_balance():
-    global BLOCKCHAIN
-    BLOCKCHAIN = []
-    BLOCKCHAIN = load_chain(BLOCKCHAIN)
-    addr = str(request.args.get('addr'))
-    balance = 0
-    for b in BLOCKCHAIN :
-            if BLOCKCHAIN.index(b) == 0:
-                tx = pending_pool.make_obj(b.transactions)
-                if tx.sender == addr:
-                    balance = balance - tx.amount
-                elif tx.recipient == addr:
-                    balance = balance + tx.amount
-            else:
-                for t in b.transactions:
-                    #print(t)
-                    tx = pending_pool.make_obj(t)
-                    if tx.sender == addr:
-                        balance = balance - int(tx.amount)
-                    elif tx.recipient == addr:
-                        balance = balance + int(tx.amount)
-    return json.dumps(balance)
 
 @node.route('/front/transtaction/new', methods=['POST', 'OPTIONS'])
 def get_front_new_transaction():
-    data = request.get_json()
-    cargo_id = data['cargo_id']
-    private_key = data['private_key']
-    trn = transaction.Transaction(sender, cargo_id)
-    trn.sign(self.private_key)
-    tx_validator.validation(trn)
-    print(serializer.Serializer.serialize(trn))
-    return 'okay'
+	# [!TODO] Подпись транзакции на стороне клиента (Обязательно!)
+	data = request.get_json()
+	cargo_id = data['cargo_id']
+	private_key = data['private_key']
+	trn = transaction.Transaction(cargo_id, asctime(gmtime()))
+	trn.sign(private_key)
+	tx_validator.validation(trn)
+	print(serializer.Serializer.serialize(trn))
+	return 0
 
 @node.route('/front/find/cargoid', methods=['GET'])
 def get_info_by_cargo_id():
-    cargo_id = request.args.get('cargo_id')
-    print(cargo_id)
-    return pending_thxs()
-
+	res = ['1231231231Fri Apr 17 20:53:21 202004663ccdca6dd5eb02265a827613c3c0e6af1e6bb588f4c1e4d336d5bae8c3b49c496aa3eb938f1b2de36278705fb91d1e4e74f9f48f079b38874b49dcb706527c9ebb5f263bf6ce39ca71ca551569f8579fd70a91c9895eb660deb4694dae13e550b8a7481883e9120763b2404c267e7e53fc3e33f78e17fa85ce425d847dd13a',
+			'1231231231Fri Apr 17 20:54:53 2020048b31d50b06d6bd85e4363576d29e003b954b829bbb6695fceb6f3159300e7600bd58b7a33e3f630b3fdb25fa5eb956490f1a8b1b1de8cf2e4bfb0a817c19f5dba4f234b3ccafbe0ad4ac8988185e89cc44c73c934913b6901486271a3555025a5c652a5f6af317e453ed63e8e37f1a262df6fa02077589a9864a5a6ba2e288e9',
+			'1231231231Fri Apr 17 20:55:49 20200433ebc82f5a60861a4a17bb338a4669f025d780f519a6ed00bff82e89bd7f272db0e7a5b4a0b8e7a32da823f43e70f69334d50be61a8fcda102e19c801a8e2c3f77b76a38669e05fef57f427fb5ec3d45266ee9188f94de3e4ee515fe697156ee6f5469c618e95e9161d5a840f205d229e56303b277e07d5f2d0575b031bd63e9']
+	objs = []
+	for t in res:
+		temp = Deserializer.deserialize(t)
+		objs.append(temp.to_dictionary())
+	cargo_id = request.args.get('cargo_id')
+	return json.dumps(objs)
 
 @node.route('/')
 def get_hello():

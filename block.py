@@ -7,42 +7,42 @@ import time
 
 class Block():
 
-    def __init__(self, timestamp, previous_hash, transactions):
-        self.timestamp = timestamp
-        self.nonce = 0
-        self.previous_hash = previous_hash
-        self.transactions = transactions
-        self.merkle_root = merkle.merkle_root(transactions)
-        self.hash = self.hash_block()
+	def __init__(self, timestamp, previous_hash, transactions):
+		self.timestamp = timestamp
+		self.previous_hash = previous_hash
+		self.transactions = transactions
+		self.merkle_root = merkle.merkle_root(transactions)
+		self.hash = self.calculate_hash()
 
-    def hash_block(self):
-        return (hashlib.sha256((str(self.timestamp) + str(self.nonce) + self.previous_hash + self.merkle_root).encode('utf-8')).hexdigest())
+	@classmethod
+	def from_dict(cls, data):
+		b = cls(data['timestamp'], data['previous_hash'], data['transaction'])
+		b.hash = data['hash']
+		b.merkle_root = data['merkle_root']
+		return b
 
-    def validate_transactions(self):
-        try:
-            if isinstance(self.transactions, list):
-                for i in self.transactions:
-                    if self.transactions.index(i) == 0:
-                        tx_validator.check_coinbase(pending_pool.make_obj(i))
-                    continue
-                tx_validator.validation(pending_pool.make_obj(i))
-            else:
-                tx_validator.check_coinbase(pending_pool.make_obj(i))
-        except Exception as msg:
-            print(str(msg))
-            return False
-        return True
+	def to_dictionary(self):
+		return {
+			'timestamp' : self.timestamp,
+			'previous_hash' : self.previous_hash,
+			'transactions' : self.transactions,
+			'merkle_root' : self.merkle_root,
+			'hash' : self.hash }
 
-    def mine(self, complexity):
-        begin = '0' * complexity
-        start = int(time.time())
+	def calculate_hash(self):
+		return (hashlib.sha256((str(self.timestamp) + self.previous_hash + self.merkle_root).encode('utf-8')).hexdigest())
 
-        while begin != self.hash[:complexity]:
-            self.nonce = self.nonce + 1
-            self.hash = self.hash_block()
-            ''' Для того чтобы сбрасывать регулярно майнинг
-            и исправлять конфликты с другими нодами
-            if int(time.time()) - start > 5:
-                return False
-            '''
-        return True
+	def validate_transactions(self):
+		# try:
+		# 	if isinstance(self.transactions, list):
+		# 		for i in self.transactions:
+		# 			if self.transactions.index(i) == 0:
+		# 				tx_validator.check_coinbase(pending_pool.make_obj(i))
+		# 			continue
+		# 		tx_validator.validation(pending_pool.make_obj(i))
+		# 	else:
+		# 		tx_validator.check_coinbase(pending_pool.make_obj(i))
+		# except Exception as msg:
+		# 	print(str(msg))
+		# 	return False
+		return True

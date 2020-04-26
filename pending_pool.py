@@ -1,5 +1,5 @@
-import serializer
-import transaction
+from serializer import Deserializer
+from transaction import Transaction
 import tx_validator
 import requests
 import json
@@ -7,33 +7,28 @@ import json
 from config import URL, NODE_PORT
 
 def pending_pool(serialized):
-    tx = None
-    try:
-        tx = make_obj(serialized)
-    except:
-        return
-    if tx_validator.validation(tx) == False:
-        return
-    save_to_mempool(serialized)
+	tx = None
+	try:
+		tx = Deserializer.deserialize(serialized)
+	except:
+		return
+	if tx_validator.validation(tx) == False:
+		return
+	save_to_mempool(serialized)
 
 def save_to_mempool(serialized):
-    f = open('mempool', 'a+')
-    f.write(serialized + '\n')
-    f.close()
+	f = open('mempool', 'a+')
+	f.write(serialized + '\n')
+	f.close()
 
-def make_obj(serialized):
-    d = dict()
-    d = serializer.Deserializer.deserialize(serialized)
-    tx = transaction.Transaction(d["sender"], d["cargo_id"])
-    tx.signed_hash = d["signed_hash"]
-    tx.public_key = d["public_key"]
-    return tx
-
-
-def take_transactions():
-    pending_transactions = requests.get(URL + NODE_PORT + '/transactions/pendings').content
-    pending_transactions = json.loads(pending_transactions)
-
-    assert len(pending_transactions) > 0, "Mempool is empty"
-    assert len(pending_transactions) >= 3, "No 3 transactions in mempool"
-    return (pending_transactions[-3:])
+def take_transactions(count):
+	f = open('mempool', 'r')
+	lines = f.readlines()
+	transaction_array = []
+	for line in lines:
+		transaction_array.append(line.rstrip())
+	f.close()
+	if count > 0 and count <= len(transaction_array):
+		return (transaction_array[-count:])
+	else:
+		return transaction_array

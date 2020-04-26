@@ -10,6 +10,7 @@ import requests
 from config import URL, NODE_PORT
 import json
 import initializer as system
+from time import asctime, gmtime
 
 class WalletCli(cmd.Cmd):
     intro = "Welcome to the tmaslyanpitcoin's wallet-cli shell. Type help or ? to list commands. \n"
@@ -51,19 +52,9 @@ class WalletCli(cmd.Cmd):
         return True
 
     def do_send(self, arg):
-        arg = arg.replace(" ", "")
-        try:
-            self.file = open('public_address', 'r')
-        except:
-            print('To send tmaslyancoins create your private key. Use new/import command.')
-            return
-        sender = self.file.read()
-        arg = arg.split(',')
-        cargo_id = arg[0]
-
-        trn = transaction.Transaction(sender, cargo_id)
+        trn = transaction.Transaction(arg, asctime(gmtime()))
         trn.sign(self.private_key)
-        tx_validator.validation(trn)
+        #tx_validator.validation(trn)
 
         print(serializer.Serializer.serialize(trn))
 
