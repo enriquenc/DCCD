@@ -54,7 +54,7 @@ class WalletCli(cmd.Cmd):
     def do_send(self, arg):
         trn = transaction.Transaction(arg, asctime(gmtime()))
         trn.sign(self.private_key)
-        #tx_validator.validation(trn)
+        #tx_validator.validate_transaction(trn)
 
         print(serializer.Serializer.serialize(trn))
 
@@ -64,7 +64,7 @@ class WalletCli(cmd.Cmd):
             print('broadcast <serialized transaction>')
             return
 
-        if tx_validator.validation(pending_pool.make_obj(arg)) == False:
+        if tx_validator.validate_transaction(pending_pool.make_obj(arg)) == False:
             return
         print('Transaction sent.')
         tx = {'serialized' : arg}

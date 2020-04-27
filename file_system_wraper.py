@@ -5,18 +5,14 @@ from block import Block
 class FileSystem():
 	@staticmethod
 	def addNode(port):
-		f = open('nodes.config', 'a+')
-		f.write(port + '\n')
-		f.close()
+		with open('nodes.config', 'a+') as f:
+			f.write(port + '\n')
 
 	@staticmethod
 	def getNodes():
-		f = open('nodes.config', 'r')
-		nodes = f.readlines()
-		f.close()
-		for i in range(len(nodes)):
-			nodes[i] = nodes[i].rstrip()
-		return nodes
+		with open('nodes.config', 'r') as f:
+			return f.read().splitlines()
+
 
 	@staticmethod
 	def addNewBlock(block, index):
@@ -32,8 +28,12 @@ class FileSystem():
 				with open('blocks/' + '%04d' % i + '.block') as json_file:
 					data = json.load(json_file)
 					block_list.append(Block.from_dict(data))
-
 				i = i + 1
 		except:
 			pass
 		return block_list
+
+	@staticmethod
+	def getPermissionedValidatorsPublicAddresses():
+		with open('validators_public_keys', 'r') as f:
+			return f.read().splitlines()

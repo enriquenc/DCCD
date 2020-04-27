@@ -1,7 +1,7 @@
 import merkle
 import hashlib
 import tx_validator
-import serializer
+from serializer import Deserializer
 import pending_pool
 import time
 
@@ -33,16 +33,13 @@ class Block():
 		return (hashlib.sha256((str(self.timestamp) + self.previous_hash + self.merkle_root).encode('utf-8')).hexdigest())
 
 	def validate_transactions(self):
-		# try:
-		# 	if isinstance(self.transactions, list):
-		# 		for i in self.transactions:
-		# 			if self.transactions.index(i) == 0:
-		# 				tx_validator.check_coinbase(pending_pool.make_obj(i))
-		# 			continue
-		# 		tx_validator.validation(pending_pool.make_obj(i))
-		# 	else:
-		# 		tx_validator.check_coinbase(pending_pool.make_obj(i))
-		# except Exception as msg:
-		# 	print(str(msg))
-		# 	return False
+		try:
+			for t in self.transactions:
+				if self.transactions.index(t) == 0:
+					tx_validator.validate_coinbase(Deserializer.deserialize(t))
+					continue
+				tx_validator.validate_transaction(Deserializer.deserialize(t))
+		except:
+			return False
 		return True
+

@@ -97,7 +97,7 @@ def get_front_new_transaction():
 	private_key = data['private_key']
 	trn = transaction.Transaction(cargo_id, asctime(gmtime()))
 	trn.sign(private_key)
-	tx_validator.validation(trn)
+	tx_validator.validate_transaction(trn)
 	print(serializer.Serializer.serialize(trn))
 	return 0
 

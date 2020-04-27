@@ -12,7 +12,7 @@ def pending_pool(serialized):
 		tx = Deserializer.deserialize(serialized)
 	except:
 		return
-	if tx_validator.validation(tx) == False:
+	if tx_validator.validate_transaction(tx) == False:
 		return
 	save_to_mempool(serialized)
 
