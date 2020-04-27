@@ -4,6 +4,16 @@ from block import Block
 
 class FileSystem():
 	@staticmethod
+	def addTransactionToMempool(serialized):
+		with open('mempool', 'a+') as f:
+			f.write(serialized + '\n')
+
+	@staticmethod
+	def getTransactionsFromMempool():
+		with open('mempool', 'r') as f:
+			return f.read().splitlines()
+
+	@staticmethod
 	def addNode(port):
 		with open('nodes.config', 'a+') as f:
 			f.write(port + '\n')
@@ -36,4 +46,9 @@ class FileSystem():
 	@staticmethod
 	def getPermissionedValidatorsPublicAddresses():
 		with open('validators_public_keys', 'r') as f:
+			return f.read().splitlines()
+
+	@staticmethod
+	def getPermissionedCheckpointsPublicAddresses():
+		with open('checkpoints_public_keys', 'r') as f:
 			return f.read().splitlines()

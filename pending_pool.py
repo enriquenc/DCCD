@@ -3,6 +3,7 @@ from transaction import Transaction
 import tx_validator
 import requests
 import json
+from file_system_wraper import FileSystem
 
 from config import URL, NODE_PORT
 
@@ -10,24 +11,15 @@ def pending_pool(serialized):
 	tx = None
 	try:
 		tx = Deserializer.deserialize(serialized)
-	except:
+		tx_validator.validate_transaction(tx)
+	except Exception as msg:
+		print("ERROR. Transaction wasn't added. " + str(msg))
 		return
-	if tx_validator.validate_transaction(tx) == False:
-		return
-	save_to_mempool(serialized)
-
-def save_to_mempool(serialized):
-	f = open('mempool', 'a+')
-	f.write(serialized + '\n')
-	f.close()
+	FileSystem.addTransactionToMempool(serialized)
 
 def take_transactions(count):
-	f = open('mempool', 'r')
-	lines = f.readlines()
-	transaction_array = []
-	for line in lines:
-		transaction_array.append(line.rstrip())
-	f.close()
+	transaction_array = FileSystem.getTransactionsFromMempool()
+
 	if count > 0 and count <= len(transaction_array):
 		return (transaction_array[-count:])
 	else:

@@ -34,10 +34,12 @@ def get_miner_queue_number():
 def new_block():
 	global blockchain
 	block = Block.from_dict(request.get_json())
-	if block_validator.validate(block) is False:
-		return -1
+	try:
+		block_validator.validate(block)
+	except Exception as msg:
+		print("ERROR. Block wasn't added. " + str(msg))
+		return 1
 	blockchain.new_block(block)
-	"[TODO] Remove transactions from mempool"
 	return 0
 
 @node.route('/addnode', methods=['POST'])

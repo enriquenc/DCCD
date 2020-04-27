@@ -1,7 +1,7 @@
 import hashlib
 import wallet
 from time import asctime, gmtime
-from serializer_config import CARGO_ID_LEN
+from serializer_config import CARGO_ID_LEN, TIMESTAMP_LEN
 
 class Transaction:
 	def __init__(self, cargo_id, timestamp):
@@ -36,4 +36,4 @@ class Transaction:
 
 class CoinbaseTransaction(Transaction):
 	def __init__(self, recipient):
-		super(CoinbaseTransaction, self).__init__("0" * CARGO_ID_LEN, asctime(gmtime()))
+		super(CoinbaseTransaction, self).__init__("0" * CARGO_ID_LEN, "0" * TIMESTAMP_LEN)

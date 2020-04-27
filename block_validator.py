@@ -6,9 +6,7 @@ import tx_validator
 import pending_pool
 
 def validate(block):
-    assert merkle.merkle_root(block.transactions) == block.merkle_root, "Invlalid Merkle Root of transactions."
-   # assert '0' * block.complexity == block.hash[:block.complexity], "Invlalid proof of work result."
-    assert block.hash == block.calculate_hash(), "Invalid hash of block."
-    assert time.time() > float(block.timestamp), "Invalid timestamp"
-    return True
+	assert merkle.merkle_root(block.transactions) == block.merkle_root, "Invlalid Merkle Root of transactions."
+	assert block.hash == block.calculate_hash(), "Invalid hash of block."
+	assert time.time() > float(block.timestamp), "Invalid timestamp"
 

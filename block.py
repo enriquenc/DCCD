@@ -39,7 +39,7 @@ class Block():
 					tx_validator.validate_coinbase(Deserializer.deserialize(t))
 					continue
 				tx_validator.validate_transaction(Deserializer.deserialize(t))
-		except:
+		except Exception as msg:
+			print(str(msg))
 			return False
 		return True
-
