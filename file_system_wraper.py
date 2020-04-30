@@ -1,6 +1,6 @@
 
 import json
-from block import Block
+import block
 
 class FileSystem():
 	@staticmethod
@@ -37,7 +37,7 @@ class FileSystem():
 			while True:
 				with open('blocks/' + '%04d' % i + '.block') as json_file:
 					data = json.load(json_file)
-					block_list.append(Block.from_dict(data))
+					block_list.append(block.Block.from_dict(data))
 				i = i + 1
 		except:
 			pass
@@ -50,5 +50,9 @@ class FileSystem():
 
 	@staticmethod
 	def getPermissionedCheckpointsPublicAddresses():
+		# По хорошему, нужно считывать только один раз во время
+		# инициализации узла и после этого сохранять в основном классе
+		# блокчейна, предварительно проверив, что дружественные ноды
+		# тоже поддерживают эти же ключи.
 		with open('checkpoints_public_keys', 'r') as f:
 			return f.read().splitlines()

@@ -48,13 +48,8 @@ class Blockchain:
 		print(block.hash)
 
 	def get_my_chain(self):
+		# [!TODO] In future we shouldn't store all chain in ROM.
 		self.chain = FileSystem.getBlocksList()
-		# try:
-		# 	if self.chain != []:
-		# 		self.is_valid_chain(self.chain)
-		# 	self.resolve_conflicts()
-		# except Exception as msg:
-		# 	print(str(msg))
 		return self.chain
 
 	def get_friendly_nodes(self):
