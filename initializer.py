@@ -13,26 +13,77 @@ import sys
 import wallet
 import transaction
 import serializer
-#import miner_cli
 from flask_cors import CORS
 from serializer import *
 from file_system_wraper import FileSystem
 from serializer_config import CARGO_ID_LEN
-
 from config import URL, NODE_PORT
-
 from enum import Enum
+import atexit
+from apscheduler.schedulers.background import BackgroundScheduler
+from node_miner_config import MINER_PRIVATE_KEY
 class ReturnCode(Enum):
 	OK = 0
 	WRONG_PARAMETER = 1
 	UNAUTHORIZED_PRIVATE_KEY = 2
+
+MAX_BLOCK_TRANSACTIONS = 3
 
 node = Flask(__name__)
 CORS(node)
 
 blockchain = Blockchain(URL, NODE_PORT)
 
+def miner_start_check_get_transaction():
+	transactions = FileSystem.getTransactionsFromMempool()
+	if len(transactions) > MAX_BLOCK_TRANSACTIONS:
+		transactions = transactions[:MAX_BLOCK_TRANSACTIONS]
 
+	for tx in transactions:
+		try:
+			tx_validator.validate_transaction(serializer.Deserializer.deserialize(tx))
+		except:
+			transactions.remove(tx)
+			FileSystem.removeTransactionFromMempool(tx)
+			print('Error transaction. Removed from mempool')
+			continue
+
+	if transactions == []:
+		print('Mempool is emtpy.')
+		return False
+
+	if MINER_PRIVATE_KEY is None:
+		print('No node miner private key.')
+		return False
+	try:
+		if wallet.privToPub(MINER_PRIVATE_KEY) not in FileSystem.getPermissionedValidatorsPublicAddresses():
+			print('Unpermissioned node miner private key.')
+			return False
+	except:
+		print('Incorrect node miner private key.')
+		return False
+	return transactions
+
+def main_node_block_miner():
+	global blockchain
+	transactions = miner_start_check_get_transaction()
+	if transactions is False:
+		return
+	b = None
+	if blockchain.chain == []:
+		b = blockchain.genesis_block(transactions)
+	else:
+		b = Block(time.time(), blockchain.chain[-1].hash, transactions)
+	if blockchain.mine(b) is True:
+		for t in transactions:
+			FileSystem.removeTransactionFromMempool(t)
+		print(b.hash)
+
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=main_node_block_miner, trigger="interval", seconds=3)
+scheduler.start()
+atexit.register(lambda: scheduler.shutdown())
 
 def get_return_value(code, data=[]):
 	result = {'result_code': code,
@@ -101,23 +152,13 @@ def get_last_block():
 
 @node.route('/transactions/new', methods=['POST'])
 def new_transaction():
-	# [!TODO] Подпись транзакции на стороне клиента (Обязательно!)
-	param = request.get_json()
-	# will be done on the client
-	cargo_id = param['cargo_id']
-	private_key = param['private_key']
-	trn = transaction.Transaction(cargo_id, asctime(gmtime()))
-	trn.sign(private_key)
-	serialized = serializer.Serializer.serialize(trn)
-	##############################
+	serialized = request.get_json()['serialized']
 	trn = serializer.Deserializer.deserialize(serialized)
 	print(trn.public_key)
 	if trn.public_key not in FileSystem.getPermissionedCheckpointsPublicAddresses():
 		return get_return_value(ReturnCode.UNAUTHORIZED_PRIVATE_KEY.value)
 	tx_validator.validate_transaction(trn)
-
 	pending_pool.pending_pool(serialized)
-
 	return get_return_value(ReturnCode.OK.value)
 
 

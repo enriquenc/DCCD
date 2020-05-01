@@ -9,6 +9,14 @@ class FileSystem():
 			f.write(serialized + '\n')
 
 	@staticmethod
+	def removeTransactionFromMempool(serialized):
+		data = FileSystem.getTransactionsFromMempool()
+		data.remove(serialized)
+		with open('mempool', 'w') as f:
+			f.write('\n'.join(data))
+
+
+	@staticmethod
 	def getTransactionsFromMempool():
 		with open('mempool', 'r') as f:
 			return f.read().splitlines()
@@ -45,7 +53,7 @@ class FileSystem():
 
 	@staticmethod
 	def getPermissionedValidatorsPublicAddresses():
-		with open('validators_public_keys', 'r') as f:
+		with open('keys/validators_public_keys', 'r') as f:
 			return f.read().splitlines()
 
 	@staticmethod
@@ -54,5 +62,5 @@ class FileSystem():
 		# инициализации узла и после этого сохранять в основном классе
 		# блокчейна, предварительно проверив, что дружественные ноды
 		# тоже поддерживают эти же ключи.
-		with open('checkpoints_public_keys', 'r') as f:
+		with open('keys/checkpoints_public_keys', 'r') as f:
 			return f.read().splitlines()

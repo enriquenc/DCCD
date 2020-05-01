@@ -13,12 +13,14 @@ class Block():
 		self.transactions = transactions
 		self.merkle_root = merkle.merkle_root(transactions)
 		self.hash = self.calculate_hash()
+		self.signed_hash = None
 
 	@classmethod
 	def from_dict(cls, data):
 		b = cls(data['timestamp'], data['previous_hash'], data['transactions'])
-		b.hash = data['hash']
 		b.merkle_root = data['merkle_root']
+		b.hash = data['hash']
+		b.signed_hash = data['signed_hash']
 		return b
 
 	def to_dictionary(self):
@@ -27,7 +29,8 @@ class Block():
 			'previous_hash' : self.previous_hash,
 			'transactions' : self.transactions,
 			'merkle_root' : self.merkle_root,
-			'hash' : self.hash }
+			'hash' : self.hash,
+			'signed_hash' : self.signed_hash }
 
 	def calculate_hash(self):
 		return (hashlib.sha256((str(self.timestamp) + self.previous_hash + self.merkle_root).encode('utf-8')).hexdigest())

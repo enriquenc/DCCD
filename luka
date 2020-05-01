@@ -1,0 +1,6 @@
+cargo_id = param[cargo_id]
+private_key = param[private_key]
+trn = transaction.Transaction(cargo_id, asctime(gmtime()))
+trn.sign(private_key)
+serialized = serializer.Serializer.serialize(trn)
+##############################

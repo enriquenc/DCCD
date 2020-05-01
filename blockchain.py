@@ -38,14 +38,15 @@ class Blockchain:
 		return block_dict_list
 
 	def mine(self, block):
-		self.miner_queue_number = api_wraper.get_miner_queue_number_list(self.url, self.friendly_nodes)
-
-		if self.resolve_conflicts() == False:
-			"""нужно вернуть транзакции в пул"""
-			return
-		self.chain.append(block)
-		requests.post(self.url + self.node_port + '/newblock', json = block.to_dictionary())
-		print(block.hash)
+		#self.miner_queue_number = api_wraper.get_miner_queue_number_list(self.url, self.friendly_nodes)
+		# Спрашиваем очередь у соседей, если очередь наша, то добавляем блок
+		# и рассказываем всем соседям.
+		# if self.resolve_conflicts() == False:
+		# 	"""нужно вернуть транзакции в пул"""
+		# 	return
+		self.new_block(block)
+		# requests.post(self.url + self.node_port + '/newblock', json = block.to_dictionary())
+		return True
 
 	def get_my_chain(self):
 		# [!TODO] In future we shouldn't store all chain in ROM.
@@ -130,8 +131,8 @@ class Blockchain:
 		FileSystem.addNode(node)
 		print('Node with port ' + node + ' added.')
 
-	def genesis_block(self, coinbase):
-		gb = block.Block(str(time.time()), '0' * 64, coinbase)
+	def genesis_block(self, transactions):
+		gb = block.Block(str(time.time()), '0' * 64, transactions)
 		return gb
 
 	def tostr(self):

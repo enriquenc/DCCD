@@ -33,7 +33,3 @@ class Transaction:
 		self.signed_hash = sp[0]
 		self.public_key = sp[1]
 
-
-class CoinbaseTransaction(Transaction):
-	def __init__(self, recipient):
-		super(CoinbaseTransaction, self).__init__("0" * CARGO_ID_LEN, "0" * TIMESTAMP_LEN)
