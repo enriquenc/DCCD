@@ -1,0 +1,108 @@
+<h1 style="text-align: center;"><strong>DCCD Blockchain API</strong></h1>
+<h3><span style="font-weight: 400;">Это документация, которая описывает принцип общения с сетью DCCD блокчейна посредством API.</span></h3>
+<h3><span style="font-weight: 400;">Несколько основных концепций:</span></h3>
+<ul>
+<li style="font-weight: 400;">
+<h3><span style="font-weight: 400;">В ответ на любой запрос (GET или POST) вы будете получать ответ в формате JSON:</span></h3>
+</li>
+</ul>
+<h3 style="text-align: center;"><span style="background-color: #ffcc99; color: #993300;"><span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">&lt;smth&gt;,</span> <span style="font-weight: 400;">&lsquo;data&rsquo;:</span> <span style="font-weight: 400;">&lt;smth&gt;</span><span style="font-weight: 400;">}</span></span></h3>
+<ul>
+<li style="font-weight: 400;">
+<h3><span style="font-weight: 400;">&nbsp;</span><span style="font-weight: 400;">data&nbsp; </span><span style="font-weight: 400;">- это, как понятно по названию, какие-то данные, они опциональные. В ответ на запрос иногда вы будете получаться в ответе какие-то данные. Если данных нет, то data будет приходить пустой - [].</span></h3>
+</li>
+</ul>
+<h3>&nbsp;</h3>
+<ul>
+<li>
+<h3><strong><span style="font-weight: 400;">return_codе</span><span style="font-weight: 400;"> - это основной код возврата этого API. Когда вы получаете ответ, обязательно первым делом нужно смотреть на код возврата, чтобы понять было&nbsp;выполнено ли действие корректно. Код возврата отправляется всегда, на любой запрос. Относительно этого кода нужно предпринимать уже дальнейшие действия по поводу вывода какой-либо информации пользователю. Если return_code равен 0, то это значит что ваш запрос прошел успешно. Во всех других случаях return_code будет равен другим значениям в соответствии со своим роутом. Детальнее про возможные коды возврата вы можете узнать в описании к соответствующему роуту.</span></strong></h3>
+</li>
+</ul>
+<h3><span style="font-weight: 400;">Для удобства можно определить такой Enum. Пример на языке python:</span></h3>
+<div>
+<div>class&nbsp;ReturnCode(Enum):</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;OK&nbsp;=&nbsp;0</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;WRONG_PARAMETER&nbsp;=&nbsp;1</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;UNAUTHORIZED_PRIVATE_KEY&nbsp;=&nbsp;2</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;EMPTY_CHAIN&nbsp;=&nbsp;4</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;WRONG_CHAIN_HEIGHT_NUMBER&nbsp;=&nbsp;5</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;INVALID_ARGUMENT&nbsp;=&nbsp;6</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;INVALID_TRANSACTION&nbsp;=&nbsp;7</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;INVALID_SIGNATURE&nbsp;=&nbsp;8</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;CARGO_ID_NOT_FOUND&nbsp;=&nbsp;9</div>
+</div>
+<h3><span style="font-weight: 400;">Этот Enum будет обновляться посредством добавления новых кодов возвращения.</span></h3>
+<h3>&nbsp;</h3>
+<div style="text-align: center;">
+<h2><strong>ROUTES</strong></h2>
+</div>
+<h3><span style="font-weight: 400; color: #993300; background-color: #ffcc99;">/miner/queue/number</span> <strong>[GET] </strong><span style="font-weight: 400;">- позволяет узнать какой номер в очереди майнинга находится этот узел. Этот функционал служит для корректного определения очереди майнинга между всеми узлами в сети.</span></h3>
+<h3><strong>Return: </strong><span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">0, &lsquo;data&rsquo;:</span> <span style="font-weight: 400;">&lt;mining number&gt;</span><span style="font-weight: 400;">}</span></h3>
+<h3>&nbsp;</h3>
+<h3><span style="font-weight: 400; color: #993300; background-color: #ffcc99;">/newblock </span><strong>[POST] </strong><span style="font-weight: 400;">- позволяет предложить узлу новый блок. Это использует узел после того как создаст новый блок и начинает рассказывать об этом всем своим дружеским нодам. Узел, который получил такой запрос должен так же рассказать всем своим соседям, в случае если у него ещё не было такого блока.</span></h3>
+<h3><strong>Return: </strong><span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">0, &lsquo;data&rsquo;:</span> <span style="font-weight: 400;">[]</span><span style="font-weight: 400;">}</span></h3>
+<h3>&nbsp;</h3>
+<h3><span style="font-weight: 400; color: #993300; background-color: #ffcc99;">/addnode</span> <strong>[POST] - </strong><span style="font-weight: 400;">позволяет добавить новый дружественный узел текущему узлу. Во время добавления идет проверка на &ldquo;добросовестность&rdquo;. Проверяется цепочка этого узла на соответствие протоколу и нашей цепочке. Если узел оказывается некорректным, то добавления не будет выполнено.</span></h3>
+<h3><span style="font-weight: 400;">// в процессе</span></h3>
+<h3><strong>Return: </strong><span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">0, &lsquo;data&rsquo;:</span> <span style="font-weight: 400;">[]</span><span style="font-weight: 400;">}</span></h3>
+<h3>&nbsp;</h3>
+<h3><span style="font-weight: 400; color: #993300; background-color: #ffcc99;">/nodes </span><strong>[GET] - </strong><span style="font-weight: 400;">позволяет получить список дружественных узлов текущего узла.</span></h3>
+<h3><strong>Return: </strong><span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">0, &lsquo;data&rsquo;:</span> <span style="font-weight: 400;">&lt;nodes_list&gt;</span><span style="font-weight: 400;">}</span><br /><br /></h3>
+<h3><span style="font-weight: 400; color: #993300; background-color: #ffcc99;">/transactions/pendings</span> <strong>[GET] - </strong><span style="font-weight: 400;">возвращает список транзакций из мемори пула. Это те транзакции которые были созданы пользователем, прошли проверку и ожидают пока их заберут в блок.</span></h3>
+<h3><strong>Return: </strong><span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">0, &lsquo;data&rsquo;:</span> <span style="font-weight: 400;">[]</span><span style="font-weight: 400;">}</span></h3>
+<h3 style="color: #5e9ca0;">&nbsp;</h3>
+<h3><span style="font-weight: 400; background-color: #ffcc99; color: #993300;">/chain?height=&lt;height&gt; </span><strong>[GET] - </strong><span style="font-weight: 400;">позволяет получить цепочку определенной высоты, начиная с конца цепи (с последнего смайненного блока), текущего узла.&nbsp;</span></h3>
+<h3><span style="font-weight: 400;">Возможные ответы в return_code:</span></h3>
+<h3><span style="font-weight: 400; color: #333399;">EMPTY_CHAIN = </span><strong><span style="color: #333399;">4</span> </strong><span style="font-weight: 400;">- в этого узла нету ни одного блока в цепи.</span></h3>
+<h3><span style="font-weight: 400; color: #333399;">WRONG_CHAIN_HEIGHT_NUMBER = </span><strong><span style="color: #333399;">5</span> </strong><span style="font-weight: 400;">- слишком большое число цепи (длина цепи меньша указанной высоты)</span></h3>
+<h3><span style="color: #333399;"><span style="font-weight: 400;">INVALID_ARGUMENT = </span><strong>6 </strong></span><span style="font-weight: 400;">- введен невалидный аргумент высоты, либо вообще не введен.</span></h3>
+<h3><strong>Return: </strong><span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">&lt;code&gt;, &lsquo;data&rsquo;:</span> <span style="font-weight: 400;">[]</span><span style="font-weight: 400;">}</span></h3>
+<h3><span style="font-weight: 400;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Если же ваш запрос корректный, вы получите в ответ запрошенное количество блоков:</span></h3>
+<h3><strong>Return:</strong> <span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">0, &lsquo;data&rsquo;:</span> <span style="font-weight: 400;">&lt;block_list&gt;</span><span style="font-weight: 400;">}</span></h3>
+<h3>&nbsp;</h3>
+<h3><span style="font-weight: 400; color: #993300; background-color: #ffcc99;">/chain/length</span> <strong>[GET] - </strong><span style="font-weight: 400;">возвращает длину цепи текущего узла.</span></h3>
+<h3><strong>Return:</strong> <span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">0, &lsquo;data&rsquo;:</span> <span style="font-weight: 400;">&lt;len&gt;</span><span style="font-weight: 400;">}</span></h3>
+<h3>&nbsp;</h3>
+<h3><span style="font-weight: 400; background-color: #ffcc99; color: #993300;">/find?&lt;arg_name&gt;=&lt;arg_data&gt;</span><strong>[GET] </strong><span style="font-weight: 400;">- возвращает поисковые данные, в зависимости от аргумента.</span></h3>
+<h3><span style="font-weight: 400;">Возможные аргументы:</span></h3>
+<h3>cargo_id = возвращает список транзакций с указанным cargo id&nbsp;в формате JSON в поле data.</h3>
+<div>block_by_height = возвращает блок по его номеру в формате JSON в поле data.</div>
+<h3><span style="font-weight: 400;">Возможные ответы в return_code:</span></h3>
+<h3><span style="color: #333399;"><span style="font-weight: 400;">EMPTY_CHAIN = </span><strong>4 </strong></span><span style="font-weight: 400;">- в этого узла нету ни одного блока в цепи.</span></h3>
+<h3><span style="color: #333399;"><span style="font-weight: 400;">WRONG_CHAIN_HEIGHT_NUMBER = </span><strong>5 </strong></span><span style="font-weight: 400;">- слишком большой номер блока (длина цепи меньша указанной высоты)</span></h3>
+<h3><span style="font-weight: 400; color: #333399;">INVALID_ARGUMENT = </span><strong><span style="color: #333399;">6</span> </strong><span style="font-weight: 400;">- введен невалидный аргумент, либо вообще не введен.</span></h3>
+<h3><span style="font-weight: 400;"><span style="color: #333399;">CARGO_ID_NOT_FOUND&nbsp; = </span><strong><span style="color: #333399;">9</span> -&nbsp;</strong>введенный cargo_id не найден.</span></h3>
+<h3><strong>Return: </strong><span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">&lt;code&gt;, &lsquo;data&rsquo;:</span> <span style="font-weight: 400;">[]</span><span style="font-weight: 400;">}</span></h3>
+<h3><span style="font-weight: 400;">Если же ваш запрос корректный, вы получите в ответ блок запрошенной высоты:</span></h3>
+<h3><strong>Return:</strong> <span style="font-weight: 400;">{</span><span style="font-weight: 400;">&lsquo;return_code&rsquo;:</span> <span style="font-weight: 400;">0, &lsquo;data&rsquo;:</span> <span style="font-weight: 400;">&lt;block&gt;</span><span style="font-weight: 400;">}</span></h3>
+<h3>&nbsp;</h3>
+<h3><span style="font-weight: 400; color: #993300; background-color: #ffcc99;">/transaction/new?&lt;arg_name&gt;=&lt;arg_data&gt;</span> <strong>[POST] - </strong><span style="font-weight: 400;">предлагает узлу новую подписанную транзакцию.</span></h3>
+<h3><span style="font-weight: 400;">Подпись происходит на стороне клиента, а на роут отправляется уже подписанная транзакция, либо сериализованная либо в формате словаря.</span></h3>
+<h3><span style="font-weight: 400;">Соответственно транзакцию можно отправить в таких аргументах:</span></h3>
+<h3><span style="font-weight: 400;">serialized - сериализованная транзакция</span></h3>
+<h3><span style="font-weight: 400;">dictionary - транзакция в формате словаря</span></h3>
+<h3><span style="font-weight: 400;">Возможные ответы в &lt;return_code&gt;:</span></h3>
+<h3><span style="color: #333399;"><span style="font-weight: 400;">INVALID_ARGUMENT = </span><strong>6 </strong></span><span style="font-weight: 400;">- </span><span style="font-weight: 400;">введен невалидный аргумент, либо вообще не введен.</span></h3>
+<h3><span style="color: #333399;"><span style="font-weight: 400;">INVALID_TRANSACTION = </span><strong>7</strong></span><span style="font-weight: 400;"> - </span><span style="font-weight: 400;">отсутствует транзакция в аргументе</span></h3>
+<h3><span style="font-weight: 400;"><span style="color: #333399;">UNAUTHORIZED_PRIVATE_KEY = <strong>2</strong></span> - приватный ключ, которым подписана транзакция не включен в список авторизованных приватных ключей для подписи транзакций.</span></h3>
+<h3><span style="font-weight: 400;"><span style="color: #333399;">INVALID_SIGNATURE = <strong>8</strong></span> - цифровая подпись некорректна. Возможно, ваша транзакция была изменена после подписи.</span></h3>
+<h3><span style="font-weight: 400;">Если же ваш запрос корректный, транзакция попадет в мемори пул текущей ноды и будет ждать пока ее заберут в блок. Вы соответственно получите такой ответ:</span></h3>
+<h3><strong>Return:</strong><span style="font-weight: 400;"> {&lsquo;return_code&rsquo;: 0, &lsquo;data&rsquo;: []}</span></h3>
+<h3 style="color: #5e9ca0;"><br /><br /></h3>
+<h3>Формат транзакции:</h3>
+<div>
+<div>{&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 'cargo_id'&nbsp;:&nbsp;self.cargo_id,</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'timestamp'&nbsp;:&nbsp;self.timestamp,</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'public_key'&nbsp;:&nbsp;self.public_key,</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'signed_hash'&nbsp;:&nbsp;self.signed_hash}</div>
+<div>&nbsp;</div>
+<h3>Формат блока:</h3>
+<div>
+<div>{&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 'timestamp'&nbsp;:&nbsp;self.timestamp,</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'previous_hash'&nbsp;:&nbsp;self.previous_hash,</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'transactions'&nbsp;:&nbsp;self.transactions,</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'merkle_root'&nbsp;:&nbsp;self.merkle_root,</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'hash'&nbsp;:&nbsp;self.hash,</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'signed_hash'&nbsp;:&nbsp;self.signed_hash&nbsp;}</div>
+</div>
+</div>

@@ -14,7 +14,7 @@ class Blockchain:
 		self.url = URL
 		self.node_port = str(node_port)
 
-		self.chain = self.get_my_chain()
+		self.chain = self.get_full_chain()
 		self.friendly_nodes = []
 		self.get_friendly_nodes()
 		self.miner_queue_number = None
@@ -31,9 +31,9 @@ class Blockchain:
 			return num
 		return len(queue)
 
-	def to_dictionary(self):
+	def to_dictionary(self, chain):
 		block_dict_list = []
-		for block in self.chain:
+		for block in chain:
 			block_dict_list.append(block.to_dictionary())
 		return block_dict_list
 
@@ -48,10 +48,9 @@ class Blockchain:
 		# requests.post(self.url + self.node_port + '/newblock', json = block.to_dictionary())
 		return True
 
-	def get_my_chain(self):
+	def get_full_chain(self):
 		# [!TODO] In future we shouldn't store all chain in ROM.
-		self.chain = FileSystem.getBlocksList()
-		return self.chain
+		return FileSystem.getBlocksList()
 
 	def get_friendly_nodes(self):
 		if self.friendly_nodes == []:

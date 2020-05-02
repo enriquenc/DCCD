@@ -2,7 +2,8 @@ import requests
 import json
 
 url = 'http://127.0.0.1:5000/transactions/new'
-myobj = {'serialized': '0123123123Fri May  1 22:54:08 2020046378707fa9dcd85d7618d5d0662ac8d1759ec6fb8340937a58a330b58d1fa17f7a3a9d58a51579a9e4fba913cb8231b4cc5136031eb78fa93132ea7f4f7ebee833368e9ccca802b18114755fa46927c3cb8342b7250ac9d1d4e78db438ea9f3753c06bc80541eb179d42595cf2d9423fdc2abfcc4f541dcc0da442ae9f8e7184'}
+myobj = {'dictionary': {'cargo_id': '14324', 'timestamp': '1588410854.301351', 'public_key': '0404fb2416c38f8e0e4790973d6cfcae0bffd02db79f651ecba976f55e84406d49218d39cb1adee8a3a911ddfe0fae85491e990d48a8ce451224ab32143c8ac736', 'signed_hash': '654eae16817c3ebacd00c31b7d220d7b0f077acfea2ff087455d645a27f6d6706c92898f1ebbff6a8b1fcd33bc202e051438d46b304692a169a82cc38c449af8'}}
+myobj = {'serialized': '00000143240001588410854.3013510404fb2416c38f8e0e4790973d6cfcae0bffd02db79f651ecba976f55e84406d49218d39cb1adee8a3a911ddfe0fae85491e990d48a8ce451224ab32143c8ac736654eae16817c3ebacd00c31b7d220d7b0f077acfea2ff087455d645a27f6d6706c92898f1ebbff6a8b1fcd33bc202e051438d46b304692a169a82cc38c449af8'}
 
 x = requests.post(url, json = myobj)
-print(json.loads(x.content.decode('utf-8'))['result_code'])
+print(json.loads(x.content.decode('utf-8')))

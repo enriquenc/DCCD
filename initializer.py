@@ -1,31 +1,23 @@
 import time
 import json
-from flask import Flask
-from flask import request
+from flask import Flask, render_template, request
 from multiprocessing import Process, Pipe
 from blockchain import Blockchain
 from block import Block
 import tx_validator
-import requests
-import pending_pool
 import block_validator
 import sys
 import wallet
-import transaction
-import serializer
+from serializer import Deserializer, Serializer
 from flask_cors import CORS
-from serializer import *
 from file_system_wraper import FileSystem
 from serializer_config import CARGO_ID_LEN
 from config import URL, NODE_PORT
-from enum import Enum
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 from node_miner_config import MINER_PRIVATE_KEY
-class ReturnCode(Enum):
-	OK = 0
-	WRONG_PARAMETER = 1
-	UNAUTHORIZED_PRIVATE_KEY = 2
+import color_output
+from return_code import ReturnCode
 
 MAX_BLOCK_TRANSACTIONS = 3
 
@@ -40,9 +32,7 @@ def miner_start_check_get_transaction():
 		transactions = transactions[:MAX_BLOCK_TRANSACTIONS]
 
 	for tx in transactions:
-		try:
-			tx_validator.validate_transaction(serializer.Deserializer.deserialize(tx))
-		except:
+		if tx_validator.validate_transaction(Deserializer.deserialize(tx)) != ReturnCode.OK:
 			transactions.remove(tx)
 			FileSystem.removeTransactionFromMempool(tx)
 			print('Error transaction. Removed from mempool')
@@ -75,8 +65,10 @@ def main_node_block_miner():
 	else:
 		b = Block(time.time(), blockchain.chain[-1].hash, transactions)
 	if blockchain.mine(b) is True:
+		# подпись транзакции
 		for t in transactions:
 			FileSystem.removeTransactionFromMempool(t)
+		# Рассказываю тут всем дружественным нодам о то что я смайнил новый блок
 		print(b.hash)
 
 
@@ -92,98 +84,116 @@ def get_return_value(code, data=[]):
 
 @node.route('/miner/queue/number', methods=['GET'])
 def get_miner_queue_number():
-	global blockchain
-	return json.dumps(blockchain.miner_queue_number)
+	return get_return_value(ReturnCode.OK.value, blockchain.miner_queue_number)
 
 @node.route('/newblock', methods=['POST'])
 def new_block():
-	global blockchain
-	block = Block.from_dict(request.get_json())
+	# [!TODO] Отправить всем дружественным нодам
+	block = None
 	try:
-		block_validator.validate(block)
+		block = Block.from_dict(request.get_json())
 	except Exception as msg:
 		print("ERROR. Block wasn't added. " + str(msg))
-		return 1
+		return get_return_value(ReturnCode.INVALID_ARGUMENT)
+	if block.validate_transactions() is False:
+		return get_return_value(ReturnCode.INVALID_ARGUMENT)
 	blockchain.new_block(block)
-	return 0
+	return get_return_value(ReturnCode.OK.value)
 
 @node.route('/addnode', methods=['POST'])
 def add_node():
 	port = request.get_json()['port']
 	blockchain.add_node(port)
-	return 0
+	return get_return_value(ReturnCode.OK.value)
 
-@node.route('/transactions/pendings')
-def get_pending_thxs():
-	return json.dumps(pending_pool.take_transactions(0))
-
-
-@node.route('/chain')
-def get_chain():
-	global blockchain
-	return json.dumps(blockchain.to_dictionary())
-
-@node.route('/chain/length')
-def get_chain_length():
-	global blockchain
-	return json.dumps(len(blockchain.chain))
-
-@node.route('/nodes')
+@node.route('/nodes', methods=['GET'])
 def get_nodes():
-	global blockchain
-	return json.dumps(blockchain.get_friendly_nodes())
+	return get_return_value(ReturnCode.OK.value, blockchain.get_friendly_nodes())
 
 
-@node.route('/block/', methods=['GET'])
-def get_n_block():
-	global blockchain
-	height = int(request.args.get('height'))
+@node.route('/transactions/pendings', methods=['GET'])
+def get_pending_thxs():
+	return get_return_value(ReturnCode.OK.value, FileSystem.getTransactionsFromMempool())
 
-	if height >= len(blockchain.chain):
-		return -1
+@node.route('/chain', methods=['GET'])
+def get_chain():
+	try:
+		height = int(request.args.get('height'))
+		assert height
+	except:
+		return get_return_value(ReturnCode.INVALID_ARGUMENT.value)
+	chain = blockchain.get_full_chain()
+	if chain == []:
+		return get_return_value(ReturnCode.EMPTY_CHAIN.value)
+	if height > len(chain):
+		return get_return_value(ReturnCode.WRONG_CHAIN_HEIGHT_NUMBER.value)
+	return get_return_value(ReturnCode.OK.value, blockchain.to_dictionary(chain[-height:]))
 
-	return json.dumps(blockchain.chain[height].to_dictionary())
-
-@node.route('/block/last')
-def get_last_block():
-	global blockchain
-	return json.dumps(blockchain.chain[-1].to_dictionary())
+@node.route('/chain/length', methods=['GET'])
+def get_chain_length():
+	chain = blockchain.get_full_chain()
+	return get_return_value(ReturnCode.OK.value, len(chain))
 
 
 @node.route('/transactions/new', methods=['POST'])
 def new_transaction():
-	serialized = request.get_json()['serialized']
-	trn = serializer.Deserializer.deserialize(serialized)
-	print(trn.public_key)
-	if trn.public_key not in FileSystem.getPermissionedCheckpointsPublicAddresses():
-		return get_return_value(ReturnCode.UNAUTHORIZED_PRIVATE_KEY.value)
-	tx_validator.validate_transaction(trn)
-	pending_pool.pending_pool(serialized)
+	serialized_tx = None
+	dictionary_tx = None
+	tx = None
+	try:
+		serialized_tx = request.get_json()['serialized']
+		tx = Deserializer.deserialize(serialized_tx)
+	except:
+		try:
+			dictionary_tx = request.get_json()['dictionary']
+			tx = Transaction.from_dict(dictionary_tx)
+		except:
+			return get_return_value(ReturnCode.INVALID_ARGUMENT.value)
+
+	code = tx_validator.validate_transaction(tx)
+	if code.value != ReturnCode.OK.value:
+		print("ERROR. Transaction wasn't added. " + color_output.prRed(code.name))
+		return get_return_value(code.value)
+	FileSystem.addTransactionToMempool(Serializer.serialize(tx))
 	return get_return_value(ReturnCode.OK.value)
 
 
-@node.route('/find/', methods=['GET'])
-def get_info_by_cargo_id():
-	param = request.args.get('cargo_id')
+def get_transactions_by_cargo_id(cargo_id):
 	data = []
-	if param is not None:
-		chain = blockchain.get_my_chain()
-		for block in chain:
-			for tx in block.transactions:
-				tx_obj = Deserializer.deserialize(tx)
-				if tx_obj.cargo_id == param:
-					data.append(tx_obj.to_dictionary())
+	chain = blockchain.get_full_chain()
+	for block in chain:
+		for tx in block.transactions:
+			tx_obj = Deserializer.deserialize(tx)
+			if tx_obj.cargo_id == cargo_id:
+				data.append(tx_obj.to_dictionary())
 	if data == []:
-		return get_return_value(ReturnCode.WRONG_PARAMETER.value)
+		return get_return_value(ReturnCode.CARGO_ID_NOT_FOUND.value)
 	return get_return_value(ReturnCode.OK.value, data)
+
+def get_block_by_height(height):
+	chain = blockchain.get_full_chain()
+	if chain == []:
+		return get_return_value(ReturnCode.EMPTY_CHAIN.value)
+	if height >= len(chain):
+		return get_return_value(ReturnCode.WRONG_CHAIN_HEIGHT_NUMBER.value)
+	return get_return_value(ReturnCode.OK.value, chain[height].to_dictionary())
+
+@node.route('/find/', methods=['GET'])
+def find():
+	param = request.args.get('cargo_id')
+	if param is not None:
+		return get_transactions_by_cargo_id(param)
+	param = request.args.get('block_by_height')
+	if param is not None:
+		return get_block_by_height(param)
+	return get_return_value(ReturnCode.INVALID_ARGUMENT.value)
 
 @node.route('/')
 def get_hello():
-	return json.dumps("HELLO DCCD")
+	return render_template('index.html')
 
 
 if __name__ == '__main__':
 	p2 = Process(target = node.run(port = NODE_PORT))
 	p2.start()
-
 
