@@ -8,20 +8,28 @@ import requests
 import block_validator
 import api_wraper
 from file_system_wraper import FileSystem
+from return_code import ReturnCode
 class Blockchain:
 
 	def __init__(self, URL, node_port):
 		self.url = URL
 		self.node_port = str(node_port)
 
+		# [!TODO] In future we shouldn't store all chain in ROM.
 		self.chain = self.get_full_chain()
 		self.friendly_nodes = []
 		self.get_friendly_nodes()
 		self.miner_queue_number = None
 
 	def new_block(self, block):
-		self.chain.append(block)
-		FileSystem.addNewBlock(block, self.chain.index(block))
+		if self.chain != [] and block.previous_hash != self.chain[-1].hash:
+			return ReturnCode.WRONG_PREVIOUS_BLOCK_HASH
+		if block.validate_transactions() is True:
+			self.chain.append(block)
+			FileSystem.addNewBlock(block, self.chain.index(block))
+			return True
+		return False
+
 
 	def find_miner_queue_number(self):
 		queue = api_wraper.get_miner_queue_number_list(self.url, self.friendly_nodes)
@@ -45,11 +53,11 @@ class Blockchain:
 		# 	"""нужно вернуть транзакции в пул"""
 		# 	return
 		self.new_block(block)
+
 		# requests.post(self.url + self.node_port + '/newblock', json = block.to_dictionary())
 		return True
 
 	def get_full_chain(self):
-		# [!TODO] In future we shouldn't store all chain in ROM.
 		return FileSystem.getBlocksList()
 
 	def get_friendly_nodes(self):

@@ -20,6 +20,7 @@ import color_output
 from return_code import ReturnCode
 
 MAX_BLOCK_TRANSACTIONS = 3
+MINING_INTERVAL_SECONDS = 3
 
 node = Flask(__name__)
 CORS(node)
@@ -64,6 +65,7 @@ def main_node_block_miner():
 		b = blockchain.genesis_block(transactions)
 	else:
 		b = Block(time.time(), blockchain.chain[-1].hash, transactions)
+	b.sign(MINER_PRIVATE_KEY)
 	if blockchain.mine(b) is True:
 		# подпись транзакции
 		for t in transactions:
@@ -73,7 +75,7 @@ def main_node_block_miner():
 
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=main_node_block_miner, trigger="interval", seconds=3)
+scheduler.add_job(func=main_node_block_miner, trigger="interval", seconds=MINING_INTERVAL_SECONDS)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
 
@@ -88,7 +90,6 @@ def get_miner_queue_number():
 
 @node.route('/newblock', methods=['POST'])
 def new_block():
-	# [!TODO] Отправить всем дружественным нодам
 	block = None
 	try:
 		block = Block.from_dict(request.get_json())
@@ -192,8 +193,13 @@ def find():
 def get_hello():
 	return render_template('index.html')
 
+@node.route('/reader', methods=['POST'])
+def get_reader_data():
+	print(request.get_json())
+	return 'ok'
+
 
 if __name__ == '__main__':
-	p2 = Process(target = node.run(port = NODE_PORT))
+	p2 = Process(target = node.run(host='0.0.0.0', port = NODE_PORT))
 	p2.start()
 

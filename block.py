@@ -3,7 +3,7 @@ import hashlib
 import tx_validator
 from serializer import Deserializer
 import time
-
+import wallet
 class Block():
 
 	def __init__(self, timestamp, previous_hash, transactions):
@@ -12,6 +12,7 @@ class Block():
 		self.transactions = transactions
 		self.merkle_root = merkle.merkle_root(transactions)
 		self.hash = self.calculate_hash()
+		self.public_key = None
 		self.signed_hash = None
 		#[!TODO] сделать обработку signed hash
 
@@ -20,6 +21,7 @@ class Block():
 		b = cls(data['timestamp'], data['previous_hash'], data['transactions'])
 		b.merkle_root = data['merkle_root']
 		b.hash = data['hash']
+		b.public_key = data['public_key']
 		b.signed_hash = data['signed_hash']
 		return b
 
@@ -30,6 +32,7 @@ class Block():
 			'transactions' : self.transactions,
 			'merkle_root' : self.merkle_root,
 			'hash' : self.hash,
+			'public_key' : self.public_key,
 			'signed_hash' : self.signed_hash }
 
 	def calculate_hash(self):
@@ -40,3 +43,9 @@ class Block():
 			if tx_validator.validate_transaction(Deserializer.deserialize(t)) is False:
 				return False
 		return True
+
+	def sign(self, private_key):
+		sp = wallet.digital_signature(private_key, self.calculate_hash())
+		self.signed_hash = sp[0]
+		self.public_key = sp[1]
+
