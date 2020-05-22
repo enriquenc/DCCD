@@ -199,7 +199,10 @@ def get_reader_data():
 	return 'ok'
 
 
-if __name__ == '__main__':
-	p2 = Process(target = node.run(host='0.0.0.0', port = NODE_PORT))
+def run():
+	p2 = Process(target = node.run())
 	p2.start()
+
+if __name__ == '__main__':
+	run()
 
