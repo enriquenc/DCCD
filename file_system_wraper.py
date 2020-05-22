@@ -24,12 +24,12 @@ class FileSystem():
 
 	@staticmethod
 	def addNode(port):
-		with open(PATH + '/home/pi/DCCD/nodes.config', 'a+') as f:
+		with open(PATH + 'nodes.config', 'a+') as f:
 			f.write(port + '\n')
 
 	@staticmethod
 	def getNodes():
-		with open(PATH + '/home/pi/DCCD/nodes.config', 'r') as f:
+		with open(PATH + 'nodes.config', 'r') as f:
 			return f.read().splitlines()
 
 
