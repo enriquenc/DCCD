@@ -22,12 +22,9 @@ from return_code import ReturnCode
 MAX_BLOCK_TRANSACTIONS = 3
 MINING_INTERVAL_SECONDS = 3
 
-def run():
-	node = Flask(__name__)
-	CORS(node)
-	return node
+node = Flask(__name__)
+CORS(node)
 
-node = run()
 blockchain = Blockchain(URL, NODE_PORT)
 
 def miner_start_check_get_transaction():
@@ -202,8 +199,7 @@ def get_reader_data():
 	return 'ok'
 
 
-
-
-# if __name__ == '__main__':
-# 	run()
+if __name__ == '__main__':
+	p2 = Process(target = node.run())
+	p2.start()
 
