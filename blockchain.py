@@ -19,7 +19,14 @@ class Blockchain:
 		self.chain = self.get_full_chain()
 		self.friendly_nodes = []
 		self.get_friendly_nodes()
-		self.miner_queue_number = None
+		self.miner_queue_number = self.find_miner_queue_number()
+		print('#' * 50)
+		print('# Node started.')
+		print('# Chain length: ' + str(len(self.chain)))
+		print('# Queue number: ' + str(self.miner_queue_number))
+		print('# Friendly nodes count: ' + str(len(self.friendly_nodes)))
+		print('#' * 50)
+
 
 	def new_block(self, block):
 		if self.chain != [] and block.previous_hash != self.chain[-1].hash:
@@ -33,6 +40,7 @@ class Blockchain:
 
 	def find_miner_queue_number(self):
 		queue = api_wraper.get_miner_queue_number_list(self.url, self.friendly_nodes)
+		print(queue)
 		for num in range(len(queue)):
 			if num in queue or str(num) in queue:
 				continue

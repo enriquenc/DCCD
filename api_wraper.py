@@ -4,8 +4,8 @@ import requests
 def get_miner_queue_number_list(url, nodes):
 	queue = []
 	for node in nodes:
-		node = requests.get(url + node + '/miner/queue/number').content.decode('utf-8')
-		if node == 'null':
+		data = requests.get(url + node + '/miner/queue/number').json()
+		if data == 'result_code' != 0:
 			continue
-		queue.append(node)
+		queue.append(data['data'])
 	return queue

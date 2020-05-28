@@ -200,6 +200,6 @@ def get_reader_data():
 
 
 if __name__ == '__main__':
-	p2 = Process(target = node.run())
+	p2 = Process(target = node.run(port=NODE_PORT))
 	p2.start()
 
