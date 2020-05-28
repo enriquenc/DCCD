@@ -24,12 +24,12 @@ class FileSystem():
 
 	@staticmethod
 	def addNode(port):
-		with open(PATH + 'nodes.config', 'a+') as f:
+		with open(PATH + 'friendly_nodes.config', 'a+') as f:
 			f.write(port + '\n')
 
 	@staticmethod
 	def getNodes():
-		with open(PATH + 'nodes.config', 'r') as f:
+		with open(PATH + 'friendly_nodes.config', 'r') as f:
 			return f.read().splitlines()
 
 

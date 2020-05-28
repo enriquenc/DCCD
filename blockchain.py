@@ -11,10 +11,7 @@ from file_system_wraper import FileSystem
 from return_code import ReturnCode
 class Blockchain:
 
-	def __init__(self, URL, node_port):
-		self.url = URL
-		self.node_port = str(node_port)
-
+	def __init__(self):
 		# [!TODO] In future we shouldn't store all chain in ROM.
 		self.chain = self.get_full_chain()
 		self.friendly_nodes = []
@@ -39,8 +36,7 @@ class Blockchain:
 
 
 	def find_miner_queue_number(self):
-		queue = api_wraper.get_miner_queue_number_list(self.url, self.friendly_nodes)
-		print(queue)
+		queue = api_wraper.get_miner_queue_number_list(self.friendly_nodes)
 		for num in range(len(queue)):
 			if num in queue or str(num) in queue:
 				continue
@@ -76,49 +72,50 @@ class Blockchain:
 		return self.friendly_nodes
 
 	def resolve_conflicts(self):
-		longest_chain_node = None
-		longest_chain_length = 0
-		d = None
-		for node in self.friendly_nodes:
-			try:
-				d = requests.get(self.url + node + '/chain/length').json()
-			except:
-				print('\nNode with port ' + node + ' is inactive.')
-				continue
-			node_chain_length = d['length']
-			if  node_chain_length > longest_chain_length:
-				longest_chain_node = node
-				longest_chain_length = node_chain_length
+		# longest_chain_node = None
+		# longest_chain_length = 0
+		# d = None
+		# for node_url in self.friendly_nodes:
+		# 	try:
+		# 		d = requests.get(self.url + node_url + '/chain/length').json()
+		# 	except:
+		# 		print('\nNode ' + node_url + ' is inactive.')
+		# 		continue
+		# 	node_chain_length = d['length']
+		# 	if  node_chain_length > longest_chain_length:
+		# 		longest_chain_node = node
+		# 		longest_chain_length = node_chain_length
 
-		d = requests.get(self.url + self.node_port + '/chain/length').json()
-		my_length = d['length']
+		# # d = requests.get(self.url + self.node_port + '/chain/length').json()
+		# # my_length = d['length']
+		# my_length = len(self.chain)
 
-		print("\nPort of node with longest chain: " + str(longest_chain_node))
-		print("Longest peer node chain: " + str(longest_chain_length))
-		print("Length of your chain: " + str(my_length), end='\n\n')
+		# print("\nPort of node with longest chain: " + str(longest_chain_node))
+		# print("Longest peer node chain: " + str(longest_chain_length))
+		# print("Length of your chain: " + str(my_length), end='\n\n')
 
-		if (longest_chain_length > my_length):
-			new_chain = requests.get(self.url + longest_chain_node + '/chain').content
-			d = json.loads(new_chain.decode('utf-8'))
-			new = d.to_dictionary()
-			f = new.copy()
-			try:
-				self.is_valid_chain(f)
-			except Exception as msg:
-				print(str(msg))
-				'''тут удаление ноды с невалидным блокчейном'''
-				'''тут вызов resolve_conflicts еще раз'''
-				return
-			count_conflict_blocks = 0
-			while count_conflict_blocks < len(self.chain):
-				if self.chain[count_conflict_blocks].hash != new[count_conflict_blocks].hash:
-					break
-				count_conflict_blocks = count_conflict_blocks + 1
-			self.chain = new
-			self.write_chain(count_conflict_blocks)
-			print('Conflicts resolved. Your blockchain is updated')
-			print("Length of your chain: " + str(len(self.chain)), end='\n\n')
-			return False
+		# if (longest_chain_length > my_length):
+		# 	new_chain = requests.get(self.url + longest_chain_node + '/chain').content
+		# 	d = json.loads(new_chain.decode('utf-8'))
+		# 	new = d.to_dictionary()
+		# 	f = new.copy()
+		# 	try:
+		# 		self.is_valid_chain(f)
+		# 	except Exception as msg:
+		# 		print(str(msg))
+		# 		'''тут удаление ноды с невалидным блокчейном'''
+		# 		'''тут вызов resolve_conflicts еще раз'''
+		# 		return
+		# 	count_conflict_blocks = 0
+		# 	while count_conflict_blocks < len(self.chain):
+		# 		if self.chain[count_conflict_blocks].hash != new[count_conflict_blocks].hash:
+		# 			break
+		# 		count_conflict_blocks = count_conflict_blocks + 1
+		# 	self.chain = new
+		# 	self.write_chain(count_conflict_blocks)
+		# 	print('Conflicts resolved. Your blockchain is updated')
+		# 	print("Length of your chain: " + str(len(self.chain)), end='\n\n')
+		# 	return False
 		print('No conflicts.')
 		return True
 

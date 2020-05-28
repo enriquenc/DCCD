@@ -12,7 +12,7 @@ from serializer import Deserializer, Serializer
 from flask_cors import CORS
 from file_system_wraper import FileSystem
 from serializer_config import CARGO_ID_LEN
-from config import URL, NODE_PORT
+from config import NODE_PORT
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 from node_miner_config import MINER_PRIVATE_KEY
@@ -25,7 +25,7 @@ MINING_INTERVAL_SECONDS = 3
 node = Flask(__name__)
 CORS(node)
 
-blockchain = Blockchain(URL, NODE_PORT)
+blockchain = Blockchain()
 
 def miner_start_check_get_transaction():
 	transactions = FileSystem.getTransactionsFromMempool()
@@ -103,8 +103,11 @@ def new_block():
 
 @node.route('/addnode', methods=['POST'])
 def add_node():
-	port = request.get_json()['port']
-	blockchain.add_node(port)
+	try:
+		port = request.get_json()['url']
+		blockchain.add_node(port)
+	except:
+		return get_return_value(ReturnCode.INVALID_ARGUMENT.value)
 	return get_return_value(ReturnCode.OK.value)
 
 @node.route('/nodes', methods=['GET'])
