@@ -175,7 +175,7 @@ def get_block_by_height(height):
 	chain = blockchain.get_full_chain()
 	if chain == []:
 		return get_return_value(ReturnCode.EMPTY_CHAIN.value)
-	if height >= len(chain):
+	if int(height) >= len(chain):
 		return get_return_value(ReturnCode.WRONG_CHAIN_HEIGHT_NUMBER.value)
 	return get_return_value(ReturnCode.OK.value, chain[height].to_dictionary())
 
@@ -184,7 +184,7 @@ def find():
 	param = request.args.get('cargo_id')
 	if param is not None:
 		return get_transactions_by_cargo_id(param)
-	param = request.args.get('block_by_height')
+	param = int(request.args.get('block_by_height'))
 	if param is not None:
 		return get_block_by_height(param)
 	return get_return_value(ReturnCode.INVALID_ARGUMENT.value)
