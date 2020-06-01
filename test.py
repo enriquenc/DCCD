@@ -4,9 +4,9 @@ from transaction import *
 
 
 #data for serialization tests
-data = ["1234567890", "Thu Apr 16 19:41:10 2020"]
+data = ["1234567890", "123123123123", "36", "information"]
 private_key = "1cee98bfe1bf08cea121b62145aa8ad0ac8f5b2543affc8c9bc38074eea21b10"
-tx_before = Transaction(data[0], data[1])
+tx_before = Transaction(data[0], data[1], data[2], data[3])
 tx_before.sign(private_key)
 s = Serializer.serialize(tx_before)
 tx_after = Deserializer.deserialize(s)

@@ -13,7 +13,7 @@ def validate_transaction(t):
 	return ReturnCode.OK
 
 def check_digital_signature(t):
-	return wallet.sign_verify(t.signed_hash, t.public_key, t.calculate_hash()), "Invalid digital signature of transaction."
+	return wallet.sign_verify(t.signed_hash, t.public_key, t.calculate_hash())
 
 def check_transactions_permissions(t):
 	return t.public_key in FileSystem.getPermissionedCheckpointsPublicAddresses()

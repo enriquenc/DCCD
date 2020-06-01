@@ -11,13 +11,14 @@ import wallet
 from serializer import Deserializer, Serializer
 from flask_cors import CORS
 from file_system_wraper import FileSystem
-from serializer_config import CARGO_ID_LEN
+from serializer_config import CARGO_ID_LEN, NAN
 from config import NODE_PORT
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 from node_miner_config import MINER_PRIVATE_KEY
 import color_output
 from return_code import ReturnCode
+from transaction import Transaction
 
 MAX_BLOCK_TRANSACTIONS = 3
 MINING_INTERVAL_SECONDS = 3
@@ -33,10 +34,11 @@ def miner_start_check_get_transaction():
 		transactions = transactions[:MAX_BLOCK_TRANSACTIONS]
 
 	for tx in transactions:
-		if tx_validator.validate_transaction(Deserializer.deserialize(tx)) != ReturnCode.OK:
+		code = tx_validator.validate_transaction(Deserializer.deserialize(tx))
+		if code != ReturnCode.OK:
 			transactions.remove(tx)
 			FileSystem.removeTransactionFromMempool(tx)
-			print('Error transaction. Removed from mempool')
+			print('Error transaction. Removed from mempool, ' + color_output.prRed(code.name))
 			continue
 
 	if transactions == []:
@@ -71,6 +73,9 @@ def main_node_block_miner():
 		for t in transactions:
 			FileSystem.removeTransactionFromMempool(t)
 		# Рассказываю тут всем дружественным нодам о то что я смайнил новый блок
+		if block_validator.validate(b) != ReturnCode.OK:
+			print("pezda")
+			return
 		print(b.hash)
 
 
@@ -138,30 +143,6 @@ def get_chain_length():
 	chain = blockchain.get_full_chain()
 	return get_return_value(ReturnCode.OK.value, len(chain))
 
-
-@node.route('/transactions/new', methods=['POST'])
-def new_transaction():
-	serialized_tx = None
-	dictionary_tx = None
-	tx = None
-	try:
-		serialized_tx = request.get_json()['serialized']
-		tx = Deserializer.deserialize(serialized_tx)
-	except:
-		try:
-			dictionary_tx = request.get_json()['dictionary']
-			tx = Transaction.from_dict(dictionary_tx)
-		except:
-			return get_return_value(ReturnCode.INVALID_ARGUMENT.value)
-
-	code = tx_validator.validate_transaction(tx)
-	if code.value != ReturnCode.OK.value:
-		print("ERROR. Transaction wasn't added. " + color_output.prRed(code.name))
-		return get_return_value(code.value)
-	FileSystem.addTransactionToMempool(Serializer.serialize(tx))
-	return get_return_value(ReturnCode.OK.value)
-
-
 def get_transactions_by_cargo_id(cargo_id):
 	data = []
 	chain = blockchain.get_full_chain()
@@ -171,8 +152,36 @@ def get_transactions_by_cargo_id(cargo_id):
 			if tx_obj.cargo_id == cargo_id:
 				data.append(tx_obj.to_dictionary())
 	if data == []:
-		return get_return_value(ReturnCode.CARGO_ID_NOT_FOUND.value)
-	return get_return_value(ReturnCode.OK.value, data)
+		return (ReturnCode.CARGO_ID_NOT_FOUND, [])
+	return (ReturnCode.OK, data)
+
+@node.route('/transactions/new', methods=['POST'])
+def new_transaction():
+	tx = None
+	try:
+		serialized_tx = request.get_json()['serialized']
+		tx = Deserializer.deserialize(serialized_tx)
+	except:
+		try:
+			dictionary_tx = request.get_json()['dictionary']
+			tx = Transaction.from_dict(dictionary_tx)
+		except Exception as m:
+			return get_return_value(ReturnCode.INVALID_ARGUMENT.value)
+
+	code = get_transactions_by_cargo_id(tx.cargo_id)[0]
+	if code.value == ReturnCode.OK.value and tx.information != NAN:
+		print("ERROR. Transaction wasn't added. " + color_output.prRed(ReturnCode.CARGO_INFORMATION_ALREADY_EXISTS.name))
+		return get_return_value(ReturnCode.CARGO_INFORMATION_ALREADY_EXISTS.value)
+
+	code = tx_validator.validate_transaction(tx)
+	if code.value != ReturnCode.OK.value:
+		print("ERROR. Transaction wasn't added. " + color_output.prRed(code.name))
+		return get_return_value(code.value)
+	FileSystem.addTransactionToMempool(Serializer.serialize(tx))
+	return get_return_value(ReturnCode.OK.value)
+
+
+
 
 def get_block_by_height(height):
 	chain = blockchain.get_full_chain()
@@ -186,7 +195,8 @@ def get_block_by_height(height):
 def find():
 	param = request.args.get('cargo_id')
 	if param is not None:
-		return get_transactions_by_cargo_id(param)
+		data = get_transactions_by_cargo_id(param)
+		return get_return_value(data[0].value, data[1])
 	param = int(request.args.get('block_by_height'))
 	if param is not None:
 		return get_block_by_height(param)

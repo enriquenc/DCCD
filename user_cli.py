@@ -9,7 +9,7 @@ import json
 import time
 from return_code import ReturnCode
 class UserCli(cmd.Cmd):
-	intro = "Welcome to the DCD user-cli shell. Type help or ? to list commands. \n"
+	intro = "Welcome to the DCCD user-cli shell. Type help or ? to list commands. \n"
 	prompt = '(user-cli) '
 	file = None
 	private_key = None

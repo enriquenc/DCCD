@@ -128,9 +128,9 @@ class Blockchain:
 	def is_valid_chain(self, chain):
 		prev = block.Block('1', '1', '1')
 		prev.hash = '0' * 64
-		# [!TODO] Проверить правильные ли хеши вообще
 		for b in chain:
-			block_validator.validate(b)
+			if block_validator.validate(b) != ReturnCode.OK:
+				return False
 			if prev != None:
 				if prev.hash != b.previous_hash:
 					return False
