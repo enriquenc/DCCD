@@ -128,13 +128,13 @@ def base_58(address_hex):
 
 def digital_signature(private_key, message):
 	private_key_bytes = codecs.decode(private_key, 'hex')
-	sk = ecdsa.SigningKey.from_string(private_key_bytes, curve = ecdsa.SECP256k1)
+	sk = ecdsa.SigningKey.from_string(private_key_bytes, curve = ecdsa.SECP256k1, hashfunc=hashlib.sha256)
 	signed_msg = sk.sign(message.encode('utf-8'))
 	return (signed_msg.hex(), privToPub(private_key))
 
 
 def sign_verify(signed_message, public_key, message):
-	vk = ecdsa.VerifyingKey.from_string(bytes.fromhex(public_key[2:]), curve=ecdsa.SECP256k1)
+	vk = ecdsa.VerifyingKey.from_string(bytes.fromhex(public_key[2:]), curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)
 	try:
 		vk.verify(bytes.fromhex(signed_message), message.encode('utf-8'))
 	except:
