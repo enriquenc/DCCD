@@ -1,25 +1,26 @@
 
 import json
 import block
-from path_config import PATH
+from path_config import PATH, WRITE_PATH
 
 class FileSystem():
 	@staticmethod
 	def addTransactionToMempool(serialized):
-		with open(PATH + 'mempool', 'a+') as f:
+		with open(WRITE_PATH + 'mempool', 'a+') as f:
 			f.write(serialized + '\n')
 
 	@staticmethod
 	def removeTransactionFromMempool(serialized):
 		data = FileSystem.getTransactionsFromMempool()
 		data.remove(serialized)
-		with open(PATH + 'mempool', 'w') as f:
+		# WTF FIX IT
+		with open(WRITE_PATH + 'mempool', 'w') as f:
 			f.write('\n'.join(data))
 
 
 	@staticmethod
 	def getTransactionsFromMempool():
-		with open(PATH + 'mempool', 'r') as f:
+		with open(WRITE_PATH + 'mempool', 'r') as f:
 			return f.read().splitlines()
 
 	@staticmethod
@@ -35,7 +36,7 @@ class FileSystem():
 
 	@staticmethod
 	def addNewBlock(block, index):
-		with open(PATH + 'blocks/' + '%04d' % index + '.block', 'w') as outfile:
+		with open(WRITE_PATH + '%04d' % index + '.block', 'w') as outfile:
 			json.dump(block.to_dictionary(), outfile)
 
 	@staticmethod
@@ -44,7 +45,7 @@ class FileSystem():
 		try:
 			i = 0
 			while True:
-				with open(PATH + 'blocks/' + '%04d' % i + '.block') as json_file:
+				with open(WRITE_PATH + '%04d' % i + '.block') as json_file:
 					data = json.load(json_file)
 					block_list.append(block.Block.from_dict(data))
 				i = i + 1

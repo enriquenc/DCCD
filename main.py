@@ -23,8 +23,8 @@ from transaction import Transaction
 MAX_BLOCK_TRANSACTIONS = 3
 MINING_INTERVAL_SECONDS = 3
 
-node = Flask(__name__)
-CORS(node)
+app = Flask(__name__)
+CORS(app)
 
 blockchain = Blockchain()
 
@@ -89,11 +89,11 @@ def get_return_value(code, data=[]):
 				'data': data}
 	return json.dumps(result)
 
-@node.route('/miner/queue/number', methods=['GET'])
+@app.route('/miner/queue/number', methods=['GET'])
 def get_miner_queue_number():
 	return get_return_value(ReturnCode.OK.value, blockchain.miner_queue_number)
 
-@node.route('/newblock', methods=['POST'])
+@app.route('/newblock', methods=['POST'])
 def new_block():
 	block = None
 	try:
@@ -106,7 +106,7 @@ def new_block():
 	blockchain.new_block(block)
 	return get_return_value(ReturnCode.OK.value)
 
-@node.route('/addnode', methods=['POST'])
+@app.route('/addnode', methods=['POST'])
 def add_node():
 	try:
 		port = request.get_json()['url']
@@ -115,16 +115,16 @@ def add_node():
 		return get_return_value(ReturnCode.INVALID_ARGUMENT.value)
 	return get_return_value(ReturnCode.OK.value)
 
-@node.route('/nodes', methods=['GET'])
+@app.route('/nodes', methods=['GET'])
 def get_nodes():
 	return get_return_value(ReturnCode.OK.value, blockchain.get_friendly_nodes())
 
 
-@node.route('/transactions/pendings', methods=['GET'])
+@app.route('/transactions/pendings', methods=['GET'])
 def get_pending_thxs():
 	return get_return_value(ReturnCode.OK.value, FileSystem.getTransactionsFromMempool())
 
-@node.route('/chain', methods=['GET'])
+@app.route('/chain', methods=['GET'])
 def get_chain():
 	try:
 		height = int(request.args.get('height'))
@@ -138,7 +138,7 @@ def get_chain():
 		return get_return_value(ReturnCode.WRONG_CHAIN_HEIGHT_NUMBER.value)
 	return get_return_value(ReturnCode.OK.value, blockchain.to_dictionary(chain[-height:]))
 
-@node.route('/chain/length', methods=['GET'])
+@app.route('/chain/length', methods=['GET'])
 def get_chain_length():
 	chain = blockchain.get_full_chain()
 	return get_return_value(ReturnCode.OK.value, len(chain))
@@ -155,7 +155,7 @@ def get_transactions_by_cargo_id(cargo_id):
 		return (ReturnCode.CARGO_ID_NOT_FOUND, [])
 	return (ReturnCode.OK, data)
 
-@node.route('/transactions/new', methods=['POST'])
+@app.route('/transactions/new', methods=['POST'])
 def new_transaction():
 	tx = None
 	try:
@@ -191,7 +191,7 @@ def get_block_by_height(height):
 		return get_return_value(ReturnCode.WRONG_CHAIN_HEIGHT_NUMBER.value)
 	return get_return_value(ReturnCode.OK.value, chain[height].to_dictionary())
 
-@node.route('/find/', methods=['GET'])
+@app.route('/find/', methods=['GET'])
 def find():
 	param = request.args.get('cargo_id')
 	if param is not None:
@@ -202,17 +202,12 @@ def find():
 		return get_block_by_height(param)
 	return get_return_value(ReturnCode.INVALID_ARGUMENT.value)
 
-@node.route('/')
+@app.route('/')
 def get_hello():
 	return render_template('index.html')
 
-@node.route('/reader', methods=['POST'])
+@app.route('/reader', methods=['POST'])
 def get_reader_data():
 	print(request.get_json())
 	return 'ok'
-
-
-if __name__ == '__main__':
-	p2 = Process(target = node.run(port=NODE_PORT))
-	p2.start()
 
