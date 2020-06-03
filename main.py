@@ -173,10 +173,9 @@ def new_transaction():
 		except Exception as m:
 			return get_return_value(ReturnCode.INVALID_ARGUMENT.value)
 
-	code = get_transactions_by_cargo_id(tx.cargo_id)[0]
-	if code.value == ReturnCode.OK.value and tx.information != NAN:
-		print("ERROR. Transaction wasn't added. " + color_output.prRed(ReturnCode.CARGO_INFORMATION_ALREADY_EXISTS.name))
-		return get_return_value(ReturnCode.CARGO_INFORMATION_ALREADY_EXISTS.value)
+	pool = FileSystem.getTransactionsFromMempool()
+	if (Serializer.serialize(tx) in pool):
+		return get_return_value(ReturnCode.CARGO_INFORMATION_ALREADY_EXISTS)
 
 	code = tx_validator.validate_transaction(tx)
 	if code.value != ReturnCode.OK.value:
