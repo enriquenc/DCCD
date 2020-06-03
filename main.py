@@ -126,7 +126,7 @@ def get_pending_thxs():
 	serialized_transactions = FileSystem.getTransactionsFromMempool()
 	dictionary_array = []
 	for s in serialized_transactions:
-		dictionary_array.append(s)
+		dictionary_array.append(Deserializer.deserialize(s).to_dictionary())
 	return get_return_value(ReturnCode.OK.value, dictionary_array)
 
 @app.route('/chain', methods=['GET'])
