@@ -1,0 +1,37 @@
+Version DCCD-1.0
+
+Source files reorganization.
+
+Added modules:
+	cli - command line interface. It helps you to generate private keys,
+		produce manipulations with these keys, make and broadcast transactions.
+
+	crypto - my realization of some cryptofunctions. Like generation of random
+		private key, transforming of it to the WIF format and back, digital
+		signature for messages and verifying of it using different libs.
+
+	node_config - configurations accordance to the current node: path
+		config, friendly nodes and private key for mining.
+		This directoryhasn't source control (added to .gitignore)
+
+	node_tmp - store files with temporary data (like mempool or blocks).
+		In fututre, this information should to store in special database,
+		unique to each node.
+
+	objects - main objects of the project. Like transactions, block,
+		blockchain, etc.
+
+	staff - staff functions, like colorful output of the text, nothing special.
+
+	templates - flask's whim, storage of index.html. API usage output.
+
+	tests - for now only de-/serialization testing and transaction to dict
+		and from dict functions. More tests in future!
+
+	validators - transaction and blocks validator functions. In future, maybe
+		validator of other chain and other node :)
+
+	wrapers - very imortant systems wrapers. Like file systems wraper or api wraper.
+
+
+
