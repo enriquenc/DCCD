@@ -2,23 +2,24 @@ import time
 import json
 from flask import Flask, render_template, request
 from multiprocessing import Process, Pipe
-from blockchain import Blockchain
-from block import Block
-import tx_validator
-import block_validator
+from objects.blockchain import Blockchain
+from objects.block import Block
+from validators import tx_validator
+from validators import block_validator
 import sys
-import wallet
-from serializer import Deserializer, Serializer
+from crypto import signature
+from objects.serializer import Deserializer, Serializer
 from flask_cors import CORS
-from file_system_wraper import FileSystem
-from serializer_config import CARGO_ID_LEN, NAN
-from config import NODE_PORT
+from objects.serializer_config import CARGO_ID_LEN, NAN
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
-from node_miner_config import MINER_PRIVATE_KEY
-import color_output
-from return_code import ReturnCode
-from transaction import Transaction
+from staff import color_output
+from objects.return_code import ReturnCode
+from objects.transaction import Transaction
+from crypto.wif import wifToPriv
+from wrapers.file_system_wraper import FileSystem
+
+MINER_PRIVATE_KEY = wifToPriv(FileSystem.getNodeWifPrivateKey().rstrip())
 
 MAX_BLOCK_TRANSACTIONS = 3
 MINING_INTERVAL_SECONDS = 3
@@ -49,7 +50,7 @@ def miner_start_check_get_transaction():
 		print('No node miner private key.')
 		return False
 	try:
-		if wallet.privToPub(MINER_PRIVATE_KEY) not in FileSystem.getPermissionedValidatorsPublicAddresses():
+		if signature.privToPub(MINER_PRIVATE_KEY) not in FileSystem.getPermissionedValidatorsPublicAddresses():
 			print('Unpermissioned node miner private key.')
 			return False
 	except:
@@ -122,7 +123,11 @@ def get_nodes():
 
 @app.route('/transactions/pendings', methods=['GET'])
 def get_pending_thxs():
-	return get_return_value(ReturnCode.OK.value, FileSystem.getTransactionsFromMempool())
+	serialized_transactions = FileSystem.getTransactionsFromMempool()
+	dictionary_array = []
+	for s in serialized_transactions:
+		dictionary_array.append(s)
+	return get_return_value(ReturnCode.OK.value, dictionary_array)
 
 @app.route('/chain', methods=['GET'])
 def get_chain():
@@ -181,8 +186,6 @@ def new_transaction():
 	return get_return_value(ReturnCode.OK.value)
 
 
-
-
 def get_block_by_height(height):
 	chain = blockchain.get_full_chain()
 	if chain == []:
@@ -205,9 +208,4 @@ def find():
 @app.route('/')
 def get_hello():
 	return render_template('index.html')
-
-@app.route('/reader', methods=['POST'])
-def get_reader_data():
-	print(request.get_json())
-	return 'ok'
 

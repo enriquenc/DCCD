@@ -1,3 +1,5 @@
 __pycache__
 .vscode
 .gcloudignore
+run.py
+node_config
