@@ -15,7 +15,7 @@ ecdsa==0.13.3
 entrypoints==0.3
 filemagic==1.6
 Flask==1.0.2
-Flask-Cors==3.0.8
+Flask-Cors==3.0.9
 googletrans==2.4.0
 idna==2.8
 ipykernel==5.1.0
